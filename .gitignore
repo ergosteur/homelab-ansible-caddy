@@ -5,4 +5,5 @@ __pycache__/
 .venv/
 *.pyc
 *.swp
-inventory/hosts.ini
+ansible/inventory/hosts.ini
+caddy.custom

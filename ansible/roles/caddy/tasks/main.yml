@@ -1,3 +1,42 @@
-- name: Placeholder for Caddy role tasks
-  debug:
-    msg: "Caddy role tasks here"
+- name: Ensure Caddy user exists
+  user:
+    name: caddy
+    shell: /usr/sbin/nologin
+    system: yes
+
+- name: Copy custom caddy binary
+  copy:
+    src: files/caddy.custom
+    dest: /usr/bin/caddy
+    mode: '0755'
+
+- name: Install Caddy systemd unit
+  copy:
+    src: files/caddy.service
+    dest: /etc/systemd/system/caddy.service
+    mode: '0644'
+
+- name: Set up cloudflare.env
+  copy:
+    src: files/cloudflare.env
+    dest: /etc/caddy/cloudflare.env
+    mode: '0600'
+
+- name: Copy Caddyfile
+  template:
+    src: templates/Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+    mode: '0644'
+  notify: Reload Caddy
+
+- name: Enable and start Caddy
+  systemd:
+    name: caddy
+    enabled: yes
+    state: started
+
+handlers:
+  - name: Reload Caddy
+    systemd:
+      name: caddy
+      state: reloaded

@@ -53,7 +53,7 @@ go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
 echo "✅ Setup complete!"
 echo "➡️ Run this when you log in:"
-echo "   source $HOME/ansible-venv/bin/activate"
+echo "   source ~/ansible-venv/bin/activate"
 echo ""
 echo "➡️ You can now run:"
 echo "   xcaddy build ..."
