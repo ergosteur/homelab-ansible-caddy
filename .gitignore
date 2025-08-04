@@ -1,0 +1,8 @@
+*.log
+*.env
+*.retry
+__pycache__/
+.venv/
+*.pyc
+*.swp
+inventory/hosts.ini

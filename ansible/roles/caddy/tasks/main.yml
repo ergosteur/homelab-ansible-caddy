@@ -1,0 +1,3 @@
+- name: Placeholder for Caddy role tasks
+  debug:
+    msg: "Caddy role tasks here"
