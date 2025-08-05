@@ -24,10 +24,15 @@ else
 endif
 
 # ==== Caddy build settings ====
+# Plugins selected for the custom Caddy build
+# Cloudflare DNS, realip, cache-handler, and transform-encoder
+# Modify the PLUGINS variable to add or remove plugins as needed.
+# For a full list of available plugins, see: https://caddyserver.com/docs/modules
 PLUGINS = \
 	--with github.com/caddy-dns/cloudflare \
 	--with github.com/kirsch33/realip \
-	--with github.com/caddyserver/cache-handler
+	--with github.com/caddyserver/cache-handler \
+	--with github.com/caddyserver/transform-encoder
 
 CADDY_BIN = ansible/playbooks/roles/caddy/files/build/caddy.custom
 

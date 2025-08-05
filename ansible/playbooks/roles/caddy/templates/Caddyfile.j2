@@ -1,15 +1,26 @@
 {
+	{% if caddy_admin_off %}
 	admin off
+	{% else %}
+	admin localhost:2019
+	{% endif %}
 	email {{ caddy_admin_email }}
 }
+
 
 {% for site in caddy_sites %}
 {{ site.domain }} {
 	encode gzip
 	log {
 		output file /var/log/caddy/{{ site.domain }}.access.log
-		format common_log
+		format transform "{common_log}"
 	}
+
+	{% if site.tls_internal | default(false) %}
+	tls internal
+	{% else %}
+	tls {{ caddy_admin_email }}
+	{% endif %}
 
 	{% if site.serve_static | default(false) %}
 	root * {{ site.root_path | default("/var/www/html") }}

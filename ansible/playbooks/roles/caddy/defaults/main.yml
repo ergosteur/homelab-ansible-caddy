@@ -1,12 +1,22 @@
 # Define default variables for the Caddy role
 # These can be overridden in group_vars or host_vars
 
+# Disable Caddy admin and API if not needed
+caddy_admin_off: false
+
+
 # Email for ACME/Let's Encrypt registration
-caddy_admin_email: "ergosteur@example.com"
+caddy_admin_email: "caddy_admin@1qaz.ca"
 
 # Default single-site config if no caddy_sites defined
-caddy_sites:
-  - domain: "caddy.localhost"
-    upstream: ""
-    serve_static: true
-    root_path: "/var/www/caddy-test"
+# Now defined in ansible/playbooks/roles/caddy/tasks/main.yml to include tls_internal
+# caddy_sites:
+#   - domain: "{{ ansible_hostname }}"
+#     upstream: ""
+#     serve_static: true
+#     root_path: "/var/www/caddy-test"
+#   - domain: "{{ ansible_fqdn }}"
+#     upstream: ""
+#     serve_static: true
+#     root_path: "/var/www/caddy-test"
+

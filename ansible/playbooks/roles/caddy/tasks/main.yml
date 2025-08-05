@@ -12,6 +12,15 @@
     group: caddy
     mode: '0755'
 
+- name: Ensure Caddy log directory exists
+  file:
+    path: /var/log/caddy
+    state: directory
+    owner: caddy
+    group: caddy
+    mode: '0755'
+
+
 - name: Copy custom caddy binary
   ansible.builtin.copy:
     src: build/caddy.custom
@@ -55,13 +64,22 @@
     group: caddy
     mode: '0644'
 
+- name: Set default caddy_sites to hostname + FQDN from DNS search if not defined
+  set_fact:
+    caddy_sites:
+      - { domain: "{{ ansible_hostname }}", upstream: "", serve_static: true, root_path: "/var/www/caddy-test", tls_internal: true }
+      - { domain: "{{ ansible_hostname }}.{{ ansible_dns.search[0] | default('localhost') }}", upstream: "", serve_static: true, root_path: "/var/www/caddy-test", tls_internal: true }
+  when: caddy_sites is not defined
+
+
 
 - name: Copy Caddyfile
   ansible.builtin.template:
     src: Caddyfile.j2
     dest: /etc/caddy/Caddyfile
     mode: '0644'
-  notify: Reload Caddy
+  notify: reload caddy
+
 
 - name: Enable and start Caddy
   ansible.builtin.systemd:
