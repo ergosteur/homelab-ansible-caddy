@@ -8,7 +8,7 @@
 	encode gzip
 	log {
 		output file /var/log/caddy/{{ site.domain }}.access.log
-		format single_field common_log
+		format common_log
 	}
 
 	{% if site.serve_static | default(false) %}
