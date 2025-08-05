@@ -21,7 +21,9 @@ all:
         caddy_admin_email: "ergosteur@example.com"
         cloudflare_api_token: "cf_token_for_group1"
         caddy_sites:
-          - domain: "blog.example.com"
+          - domain: 
+              - "blog.example.com"
+              - "alt-blog.example.com"
             upstream: "blog-backend.homelab.arpa:8080"
             cache_static: true
             cache_ttl: "1h"

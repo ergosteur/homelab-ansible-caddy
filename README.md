@@ -39,47 +39,55 @@ This will:
 
 ## ⚙️ Configuration
 
-### Inventory
+vps-proxy ansible_host=1.2.3.4
+dmz-proxy ansible_host=192.168.1.10
+caddy_sites:
+
+### Inventory & Variables
 
 Edit your Ansible inventory at:
 
 ```
-ansible/inventory/hosts.ini
+ansible/inventory/hosts.yml
 ```
 
 Example:
 
-```ini
-[proxy_group1]
-vps-proxy ansible_host=1.2.3.4
-
-[proxy_group2]
-dmz-proxy ansible_host=192.168.1.10
-```
-
-### Group Variables
-
-Define sites and Cloudflare tokens per group in:
-
-```
-ansible/group_vars/proxy_group1.yml
-ansible/group_vars/proxy_group2.yml
-```
-
-Example `proxy_group1.yml`:
-
 ```yaml
-caddy_admin_email: "ergosteur@example.com"
-cloudflare_api_token: "cf_token_for_group1"
-
-caddy_sites:
-  - domain: "blog.example.com"
-    upstream: "blog-backend.homelab.arpa:8080"
-    cache_static: true
-    cache_ttl: "1h"
+all:
+  vars:
+    ansible_user: ubuntu
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    ansible_ssh_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/id_ed25519' }}"
+  children:
+    proxy_group1:
+      vars:
+        caddy_admin_email: "ergosteur@example.com"
+        cloudflare_api_token: "cf_token_for_group1"
+        caddy_sites:
+          - domain: "blog.example.com"
+            upstream: "blog-backend.homelab.arpa:8080"
+            cache_static: true
+            cache_ttl: "1h"
+      hosts:
+        vps-proxy.example.com:
+    proxy_group2:
+      vars:
+        caddy_admin_email: "ergosteur@contoso.com"
+        cloudflare_api_token: "cf_token_for_group2"
+        caddy_sites:
+          - domain: "dashboard.homelab.arpa"
+            upstream: "dashboard-api.homelab.arpa:9000"
+            cache_static: false
+          - domain: "files.contoso.com"
+            upstream: "files-backend.homelab.arpa:7000"
+            cache_static: true
+            cache_ttl: "6h"
+      hosts:
+        dmz-proxy.example.com:
 ```
 
-💡 Real files are `.gitignore`d — commit only `sample_*.yml` with safe example values.
+💡 Real secrets/tokens should not be committed. Use sample/example values for public files.
 
 ---
 
@@ -114,10 +122,11 @@ Deploy to all hosts:
 make deploy
 ```
 
+
 Deploy to one host:
 
 ```bash
-make deploy LIMIT=vps-proxy
+make deploy LIMIT=vps-proxy.example.com
 ```
 
 Deploy to a group:
@@ -136,7 +145,7 @@ make deploy LIMIT=proxy_group2
   ```
   This is **normal** — it just means you ran `xcaddy` directly without a build command.
 - All service setup, configs, and TLS settings are handled by Ansible roles and templates.
-- Built binaries are stored in `build/caddy.custom` and ignored by Git.
+- Built binaries are stored in `ansible/playbooks/roles/caddy/files/build/caddy.custom` and ignored by Git.
 
 ---
 
