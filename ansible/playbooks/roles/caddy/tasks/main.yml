@@ -54,9 +54,9 @@
     content: |
       <!DOCTYPE html>
       <html>
-      <head><title>Caddy Test</title></head>
+      <head><title>Caddy Test - {{ ansible_hostname }}</title></head>
       <body>
-        <h1>Caddy is working 🎉</h1>
+        <h1>Caddy is working on {{ ansible_hostname }} 🎉</h1>
         <p>This is the default test page.</p>
       </body>
       </html>
@@ -64,13 +64,30 @@
     group: caddy
     mode: '0644'
 
-- name: Set default caddy_sites to hostname + FQDN from DNS search if not defined
-  set_fact:
-    caddy_sites:
-      - { domain: "{{ ansible_hostname }}", upstream: "", serve_static: true, root_path: "/var/www/caddy-test", tls_internal: true }
-      - { domain: "{{ ansible_hostname }}.{{ ansible_dns.search[0] | default('localhost') }}", upstream: "", serve_static: true, root_path: "/var/www/caddy-test", tls_internal: true }
-  when: caddy_sites is not defined
 
+- name: Build final caddy_sites list
+  set_fact:
+    caddy_sites: >-
+      {{
+        (caddy_sites | default([]))
+        +
+        [
+          {
+            'domain': ansible_hostname,
+            'upstream': '',
+            'serve_static': True,
+            'root_path': '/var/www/caddy-test',
+            'tls_internal': True
+          },
+          {
+            'domain': ansible_hostname ~ '.' ~ (ansible_dns.search[0] | default('localhost')),
+            'upstream': '',
+            'serve_static': True,
+            'root_path': '/var/www/caddy-test',
+            'tls_internal': True
+          }
+        ]
+      }}
 
 
 - name: Copy Caddyfile

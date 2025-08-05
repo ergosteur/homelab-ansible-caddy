@@ -5,21 +5,29 @@
 	admin localhost:2019
 	{% endif %}
 	email {{ caddy_admin_email }}
+
+	log {
+		output stdout
+		format console
+	}
 }
 
-
 {% for site in caddy_sites %}
-{{ site.domain }} {
+{% set domains = site.domain if site.domain is iterable and site.domain is not string else [site.domain] %}
+{{ domains | join(' ') }} {
 	encode gzip
 	log {
-		output file /var/log/caddy/{{ site.domain }}.access.log
+		output file /var/log/caddy/{{ (domains | first) }}.access.log
 		format transform "{common_log}"
 	}
 
 	{% if site.tls_internal | default(false) %}
 	tls internal
 	{% else %}
-	tls {{ caddy_admin_email }}
+	{# --- Public domain with Cloudflare DNS-01 + wildcard --- #}
+	tls {
+		dns cloudflare {{ cloudflare_api_token }}
+	}
 	{% endif %}
 
 	{% if site.serve_static | default(false) %}
