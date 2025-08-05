@@ -1,3 +1,23 @@
-{{ your_hostname }} {
-  reverse_proxy 127.0.0.1:{{ your_port }}
+{
+	admin off
+	email {{ caddy_admin_email }}
 }
+
+{% for site in caddy_sites %}
+{{ site.domain }} {
+	encode gzip
+	log {
+		output file /var/log/caddy/{{ site.domain }}.access.log
+		format single_field common_log
+	}
+
+	{% if site.serve_static | default(false) %}
+	root * {{ site.root_path | default("/var/www/html") }}
+	file_server
+	{% elif site.upstream %}
+	reverse_proxy {{ site.upstream }}
+	{% else %}
+	respond "Caddy is working!" 200
+	{% endif %}
+}
+{% endfor %}

@@ -1,4 +1,4 @@
-- name: reload caddy
-  service:
+- name: Reload Caddy
+  ansible.builtin.systemd:
     name: caddy
     state: reloaded

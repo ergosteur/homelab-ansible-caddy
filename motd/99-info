@@ -1,0 +1,17 @@
+#!/bin/bash
+
+echo ""
+echo "🧱  Welcome to your 🔧 Caddy Build + 🚀 Ansible Deploy Host"
+echo ""
+echo "🧩  This server builds your custom Caddy binary with extra modules"
+#echo "     - Cloudflare DNS challenge"
+#echo "     - RealIP, Cache, Prometheus, Filebrowser plugins"
+echo "📦  It also runs Ansible to push config and binaries to:"
+echo "     - DMZ reverse proxy"
+echo "     - VPS edge proxy"
+echo "💡  To activate your Ansible environment:"
+echo "     source ~/ansible-venv/bin/activate"
+echo "🛠️  Suggested next steps:"
+echo "     cd ~/homelab-ansible-caddy"
+echo "     make update"
+echo ""

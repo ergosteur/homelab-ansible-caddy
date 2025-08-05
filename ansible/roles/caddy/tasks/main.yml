@@ -1,42 +1,70 @@
 - name: Ensure Caddy user exists
-  user:
+  ansible.builtin.user:
     name: caddy
     shell: /usr/sbin/nologin
     system: yes
 
+- name: Ensure /etc/caddy exists
+  ansible.builtin.file:
+    path: /etc/caddy
+    state: directory
+    owner: caddy
+    group: caddy
+    mode: '0755'
+
 - name: Copy custom caddy binary
-  copy:
-    src: files/caddy.custom
+  ansible.builtin.copy:
+    src: ../../../../build/caddy.custom
     dest: /usr/bin/caddy
     mode: '0755'
 
 - name: Install Caddy systemd unit
-  copy:
-    src: files/caddy.service
+  ansible.builtin.template:
+    src: caddy.service
     dest: /etc/systemd/system/caddy.service
     mode: '0644'
 
 - name: Set up cloudflare.env
-  copy:
-    src: files/cloudflare.env
+  ansible.builtin.copy:
     dest: /etc/caddy/cloudflare.env
     mode: '0600'
+    content: |
+      CLOUDFLARE_API_TOKEN={{ cloudflare_api_token }}
+
+- name: Ensure default Caddy web root exists
+  ansible.builtin.file:
+    path: /var/www/caddy-test
+    state: directory
+    owner: caddy
+    group: caddy
+    mode: '0755'
+
+- name: Place default index.html if no group_vars override
+  ansible.builtin.copy:
+    dest: /var/www/caddy-test/index.html
+    content: |
+      <!DOCTYPE html>
+      <html>
+      <head><title>Caddy Test</title></head>
+      <body>
+        <h1>Caddy is working 🎉</h1>
+        <p>This is the default test page.</p>
+      </body>
+      </html>
+    owner: caddy
+    group: caddy
+    mode: '0644'
+
 
 - name: Copy Caddyfile
-  template:
-    src: templates/Caddyfile.j2
+  ansible.builtin.template:
+    src: Caddyfile.j2
     dest: /etc/caddy/Caddyfile
     mode: '0644'
   notify: Reload Caddy
 
 - name: Enable and start Caddy
-  systemd:
+  ansible.builtin.systemd:
     name: caddy
     enabled: yes
     state: started
-
-handlers:
-  - name: Reload Caddy
-    systemd:
-      name: caddy
-      state: reloaded

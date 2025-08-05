@@ -1,2 +1,12 @@
-your_hostname: example.com
-your_port: 8080
+# Define default variables for the Caddy role
+# These can be overridden in group_vars or host_vars
+
+# Email for ACME/Let's Encrypt registration
+caddy_admin_email: "ergosteur@example.com"
+
+# Default single-site config if no caddy_sites defined
+caddy_sites:
+  - domain: "caddy.localhost"
+    upstream: ""
+    serve_static: true
+    root_path: "/var/www/caddy-test"
