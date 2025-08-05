@@ -14,7 +14,7 @@
 
 - name: Copy custom caddy binary
   ansible.builtin.copy:
-    src: ../../../../build/caddy.custom
+    src: build/caddy.custom
     dest: /usr/bin/caddy
     mode: '0755'
 

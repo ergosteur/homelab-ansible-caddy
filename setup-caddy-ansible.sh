@@ -19,6 +19,7 @@ sudo apt install -y \
   wget \
   unzip \
   make \
+  yq \
   openssh-client \
   openssh-server \
   python3 \

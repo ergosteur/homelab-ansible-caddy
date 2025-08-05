@@ -1,4 +1,17 @@
-- hosts: reverse_proxies
+- name: Deploy Caddy reverse proxy
+  hosts: all
   become: yes
+
+  pre_tasks:
+    - name: Verify SSH connectivity
+      ansible.builtin.ping:
+      register: ping_result
+      ignore_unreachable: false
+
+    - name: Show unreachable hosts (if any)
+      ansible.builtin.debug:
+        msg: "❌ Cannot reach {{ inventory_hostname }} over SSH!"
+      when: ping_result is failed
+
   roles:
     - caddy
