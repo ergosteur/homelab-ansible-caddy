@@ -40,3 +40,8 @@
 	{% endif %}
 }
 {% endfor %}
+
+# Default fallback response
+:80, :443 {
+	respond "No backend configured for this hostname ({http.request.host}) on Caddy server at {{ ansible_hostname }}" 404
+}
