@@ -3,7 +3,29 @@ set -e
 
 # Configuration - can be overridden via environment variables
 GO_VERSION=${GO_VERSION:-"1.22.3"}
-ANSIBLE_VERSION=${ANSIBLE_VERSION:-"latest"}
+
+# Parse command line arguments
+FORCE_REINSTALL=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --force|-f)
+            FORCE_REINSTALL=true
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  --force, -f    Force reinstallation of existing components"
+            echo "  --help, -h     Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
 
 # Colors for output
 RED='\033[0;31m'
@@ -92,13 +114,23 @@ fi
 
 print_status "🐍 Creating Python virtualenv for Ansible..."
 if [ -d "$HOME/ansible-venv" ]; then
-    print_warning "Ansible virtualenv already exists. Removing and recreating..."
-    rm -rf "$HOME/ansible-venv"
+    if [ "$FORCE_REINSTALL" = true ]; then
+        print_warning "Ansible virtualenv already exists. Removing and recreating..."
+        rm -rf "$HOME/ansible-venv"
+    else
+        print_warning "Ansible virtualenv already exists. Skipping creation..."
+        print_status "Use --force to recreate it"
+    fi
 fi
 
-if ! python3 -m venv "$HOME/ansible-venv"; then
-    print_error "Failed to create Python virtualenv"
-    exit 1
+if [ ! -d "$HOME/ansible-venv" ]; then
+    if ! python3 -m venv "$HOME/ansible-venv"; then
+        print_error "Failed to create Python virtualenv"
+        exit 1
+    fi
+    print_success "Created new Ansible virtualenv"
+else
+    print_status "Using existing Ansible virtualenv"
 fi
 
 # Source the virtualenv
@@ -113,9 +145,23 @@ if ! pip install --upgrade pip setuptools wheel; then
     exit 1
 fi
 
-if ! pip install "ansible${ANSIBLE_VERSION:+==$ANSIBLE_VERSION}"; then
-    print_error "Failed to install Ansible"
-    exit 1
+# Check if Ansible is already installed
+if source "$HOME/ansible-venv/bin/activate" && command -v ansible >/dev/null 2>&1; then
+    if [ "$FORCE_REINSTALL" = true ]; then
+        print_warning "Ansible already installed. Reinstalling..."
+        if ! pip install --force-reinstall ansible; then
+            print_error "Failed to reinstall Ansible"
+            exit 1
+        fi
+    else
+        print_warning "Ansible already installed. Skipping installation..."
+        print_status "Use --force to reinstall it"
+    fi
+else
+    if ! pip install ansible; then
+        print_error "Failed to install Ansible"
+        exit 1
+    fi
 fi
 
 print_success "Ansible installed in virtualenv."
@@ -125,36 +171,48 @@ print_status "📦 Installing Go ${GO_VERSION}..."
 GO_ARCHIVE="go${GO_VERSION}.linux-amd64.tar.gz"
 GO_URL="https://go.dev/dl/${GO_ARCHIVE}"
 
-# Download Go with error checking
-if ! wget -q "$GO_URL" -O "/tmp/go.tar.gz"; then
-    print_error "Failed to download Go"
-    exit 1
-fi
-
-# Verify the download (basic size check)
-if [ ! -s "/tmp/go.tar.gz" ]; then
-    print_error "Downloaded Go archive is empty or corrupted"
-    exit 1
-fi
-
-# Remove existing Go installation
+# Check if Go is already installed
 if [ -d "/usr/local/go" ]; then
-    sudo rm -rf /usr/local/go
+    if [ "$FORCE_REINSTALL" = true ]; then
+        print_warning "Removing existing Go installation..."
+        sudo rm -rf /usr/local/go
+    else
+        print_warning "Go already installed at /usr/local/go. Skipping installation..."
+        print_status "Use --force to reinstall it"
+        goto_path_setup=true
+    fi
 fi
 
-# Extract Go
-if ! sudo tar -C /usr/local -xzf /tmp/go.tar.gz; then
-    print_error "Failed to extract Go"
-    exit 1
-fi
+# Check if we should skip Go installation
+if [ "${goto_path_setup:-false}" = true ]; then
+    print_status "Skipping Go installation (using existing)"
+else
+    # Download Go with error checking
+    if ! wget -q "$GO_URL" -O "/tmp/go.tar.gz"; then
+        print_error "Failed to download Go"
+        exit 1
+    fi
 
-# Verify Go installation
-if ! /usr/local/go/bin/go version >/dev/null 2>&1; then
-    print_error "Go installation verification failed"
-    exit 1
-fi
+    # Verify the download (basic size check)
+    if [ ! -s "/tmp/go.tar.gz" ]; then
+        print_error "Downloaded Go archive is empty or corrupted"
+        exit 1
+    fi
 
-print_success "Go ${GO_VERSION} installed successfully"
+    # Extract Go
+    if ! sudo tar -C /usr/local -xzf /tmp/go.tar.gz; then
+        print_error "Failed to extract Go"
+        exit 1
+    fi
+
+    # Verify Go installation
+    if ! /usr/local/go/bin/go version >/dev/null 2>&1; then
+        print_error "Go installation verification failed"
+        exit 1
+    fi
+
+    print_success "Go ${GO_VERSION} installed successfully"
+fi
 
 print_status "🛣️ Adding Go to PATH..."
 # Add to current session
