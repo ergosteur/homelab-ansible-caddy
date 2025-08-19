@@ -36,10 +36,18 @@ all:
         cloudflare_api_token: "cf_token_for_group2"
         caddy_sites:
           - domain: "dashboard.homelab.arpa"
-            upstream: "dashboard-api.homelab.arpa:9000"
-            cache_static: false
+            # Instead of a single upstream, define a list of upstreams
+            upstreams:
+              - path: "/dash*"
+                target: "dashboard-api.homelab.arpa:9000"
+              - path: "/dash2*"
+                target: "dashboard-api2.homelab.arpa:9001"
+            # Define a default response for the root path
+            default_response: "No backend configured for this path"
+            default_status: 404
           - domain: "files.contoso.com"
             upstream: "files-backend.homelab.arpa:7000"
             cache_static: true
             cache_ttl: "6h"
+            skip_upstream_cert_verify: true
 

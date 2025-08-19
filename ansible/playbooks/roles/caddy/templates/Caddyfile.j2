@@ -1,47 +1,94 @@
-{
-	{% if caddy_admin_off %}
-	admin off
-	{% else %}
-	admin localhost:2019
-	{% endif %}
-	email {{ caddy_admin_email }}
+{% macro proxy_contents_macro(site) %}
+    header_up Host {http.request.host}
+    {% if site.skip_upstream_cert_verify | default(false) %}
+        transport http {
+            tls_insecure_skip_verify
+        }
+    {% endif %}
+{% endmacro %}
 
-	log {
-		output stdout
-		format console
-	}
+{
+    {% if caddy_admin_off | default(false) %}
+    admin off
+    {% else %}
+    admin localhost:2019
+    {% endif %}
+    email {{ caddy_admin_email }}
+
+    log {
+        output stdout
+        format console
+    }
 }
 
 {% for site in caddy_sites %}
 {% set domains = site.domain if site.domain is iterable and site.domain is not string else [site.domain] %}
-{{ domains | join(' ') }} {
-	encode gzip
-	log {
-		output file /var/log/caddy/{{ (domains | first) }}.access.log
-		format transform "{common_log}"
-	}
+{{ domains | join(', ') }} {
 
-	{% if site.tls_internal | default(false) %}
-	tls internal
-	{% else %}
-	{# --- Public domain with Cloudflare DNS-01 + wildcard --- #}
-	tls {
-		dns cloudflare {{ cloudflare_api_token }}
-	}
-	{% endif %}
+    # Set up logging for this site
+    log {
+        output file /var/log/caddy/{{ (domains | first) | replace('*', 'wildcard') }}.access.log
+        format transform "{common_log}"
+    }
 
-	{% if site.serve_static | default(false) %}
-	root * {{ site.root_path | default("/var/www/html") }}
-	file_server
-	{% elif site.upstream %}
-	reverse_proxy {{ site.upstream }}
-	{% else %}
-	respond "Caddy is working!" 200
-	{% endif %}
+    # Handle TLS configuration
+    {% if site.tls_internal | default(false) %}
+    tls internal
+    {% else %}
+    tls {
+        dns cloudflare {{ cloudflare_api_token }}
+    }
+    {% endif %}
+
+    # Handle wildcard subdomain routing if it exists
+    {% if site.subdomain_upstreams is defined and site.subdomain_upstreams is not none %}
+    
+    # Iterate through the list of subdomains and create a reverse proxy rule for each
+    {% for rule in site.subdomain_upstreams %}
+    @{{ rule.subdomain }} host {{ rule.subdomain }}.{{ (domains | first) | replace('*.', '', 1) }}
+    handle @{{ rule.subdomain }} {
+        reverse_proxy {{ rule.upstream }} {
+            {{ proxy_contents_macro(site) }}
+        }
+    }
+    {% endfor %}
+
+    # Add a catch-all for any other subdomain that doesn't have a rule
+    handle {
+        respond "No backend configured for this subdomain ({http.request.host})." 404
+    }
+
+    # Handle path-based upstreams (NOTE: this block will not be triggered if subdomain_upstreams is defined)
+    {% elif site.upstreams is defined and site.upstreams is not none %}
+    {% for upstream_rule in site.upstreams %}
+    reverse_proxy {{ upstream_rule.path }} {{ upstream_rule.target }} {
+        {{ proxy_contents_macro(site) }}
+    }
+    {% endfor %}
+
+    # Handle a default response for the domain if no path matches
+    {% if site.default_response is defined and site.default_response is not none %}
+    respond "{{ site.default_response }}" {{ site.default_status | default(200) }}
+    {% endif %}
+
+    # Handle single upstream or other default behaviors
+    {% elif site.serve_static | default(false) %}
+    root * {{ site.root_path | default("/var/www/html") }}
+    file_server
+    {% elif site.upstream %}
+    reverse_proxy {{ site.upstream }} {
+        {{ proxy_contents_macro(site) }}
+    }
+    {% else %}
+    respond "Caddy is working!" 200
+    {% endif %}
+
+    # Compression for text-based content
+    encode gzip
 }
 {% endfor %}
 
-# Default fallback response
+# Default fallback response for non-configured hosts
 :80, :443 {
-	respond "No backend configured for this hostname ({http.request.host}) on Caddy server at {{ ansible_hostname }}" 404
+    respond "No backend configured for this hostname ({http.request.host}) on Caddy server at {{ ansible_hostname }}" 404
 }
