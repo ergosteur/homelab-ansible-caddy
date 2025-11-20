@@ -40,8 +40,12 @@
     }
     {% endif %}
 
-    # Handle wildcard subdomain routing if it exists
-    {% if site.subdomain_upstreams is defined and site.subdomain_upstreams is not none %}
+    {# Handle redirects first, as they are a terminal action for a site #}
+    {% if site.redirect is defined and site.redirect %}
+    redir {{ site.redirect.target }}{uri} {{ site.redirect.code | default('permanent') }}
+
+    {# Handle wildcard subdomain routing if it exists #}
+    {% elif site.subdomain_upstreams is defined and site.subdomain_upstreams is not none %}
     
     # Iterate through the list of subdomains and create a reverse proxy rule for each
     {% for rule in site.subdomain_upstreams %}

@@ -50,4 +50,9 @@ all:
             cache_static: true
             cache_ttl: "6h"
             skip_upstream_cert_verify: true
-
+          - domain: "legacy.contoso.com"
+            redirect:
+              target: "https://files.contoso.com"
+              # The code can be a number (301, 302) or a keyword ('permanent', 'temporary').
+              # Defaults to 'permanent' (301) in the Caddyfile template if omitted.
+              code: 301
