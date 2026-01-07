@@ -1,3 +1,7 @@
+- name: Reload Caddy unit
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
 - name: Restart Caddy
   systemd:
     name: caddy
@@ -7,8 +11,9 @@
   when: caddy_admin_off | default(true)
 
 - name: Reload Caddy
-  systemd:
+  ansible.builtin.systemd:
     name: caddy
     state: reloaded
+    daemon_reload: yes
   listen: "reload caddy"
   when: not caddy_admin_off | default(true) | bool

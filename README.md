@@ -39,10 +39,6 @@ This will:
 
 ## ⚙️ Configuration
 
-vps-proxy ansible_host=1.2.3.4
-dmz-proxy ansible_host=192.168.1.10
-caddy_sites:
-
 ### Inventory & Variables
 
 Edit your Ansible inventory at:

@@ -31,12 +31,18 @@
         format transform "{common_log}"
     }
 
+    {% if site.cache_static | default(false) %}
+    cache {
+        ttl {{ site.cache_ttl | default('5m') }}
+    }
+    {% endif %}
+
     # Handle TLS configuration
     {% if site.tls_internal | default(false) %}
     tls internal
     {% else %}
     tls {
-        dns cloudflare {{ cloudflare_api_token }}
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
     }
     {% endif %}
 
@@ -94,5 +100,5 @@
 
 # Default fallback response for non-configured hosts
 :80, :443 {
-    respond "No backend configured for this hostname ({http.request.host}) on Caddy server at {{ ansible_hostname }}" 404
+    respond "No backend configured for this hostname ({http.request.host}) on Caddy server at {{ ansible_facts['hostname'] }}" 404
 }

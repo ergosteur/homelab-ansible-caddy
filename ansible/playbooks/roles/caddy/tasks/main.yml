@@ -20,6 +20,11 @@
     group: caddy
     mode: '0755'
 
+- name: Ensure certutil (libnss3-tools) is installed
+  ansible.builtin.package:
+    name: libnss3-tools
+    state: present
+
 
 - name: Copy custom caddy binary
   ansible.builtin.copy:
@@ -32,6 +37,9 @@
     src: caddy.service
     dest: /etc/systemd/system/caddy.service
     mode: '0644'
+  notify:
+    - Reload Caddy unit
+    - Restart Caddy
 
 - name: Set up cloudflare.env
   ansible.builtin.copy:
@@ -54,9 +62,9 @@
     content: |
       <!DOCTYPE html>
       <html>
-      <head><title>Caddy Test - {{ ansible_hostname }}</title></head>
+      <head><title>Caddy Test - {{ ansible_facts['hostname'] }}</title></head>
       <body>
-        <h1>Caddy is working on {{ ansible_hostname }} 🎉</h1>
+        <h1>Caddy is working on {{ ansible_facts['hostname'] }} 🎉</h1>
         <p>This is the default test page.</p>
       </body>
       </html>
@@ -73,14 +81,14 @@
         +
         [
           {
-            'domain': ansible_hostname,
+            'domain': ansible_facts['hostname'],
             'upstream': '',
             'serve_static': True,
             'root_path': '/var/www/caddy-test',
             'tls_internal': True
           },
           {
-            'domain': ansible_hostname ~ '.' ~ (ansible_dns.search[0] | default('localhost')),
+            'domain': ansible_facts['hostname'] ~ '.' ~ (ansible_facts['dns'].search[0] | default('localhost')),
             'upstream': '',
             'serve_static': True,
             'root_path': '/var/www/caddy-test',

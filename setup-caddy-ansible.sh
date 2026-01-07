@@ -167,18 +167,15 @@ fi
 print_success "Ansible installed in virtualenv."
 print_status "   To use it, run: source $HOME/ansible-venv/bin/activate"
 
-print_status "📦 Installing Go ${GO_VERSION}..."
-GO_ARCHIVE="go${GO_VERSION}.linux-amd64.tar.gz"
-GO_URL="https://go.dev/dl/${GO_ARCHIVE}"
+print_status "📦 Installing/Updating Go (latest)..."
 
 # Check if Go is already installed
 if [ -d "/usr/local/go" ]; then
     if [ "$FORCE_REINSTALL" = true ]; then
-        print_warning "Removing existing Go installation..."
-        sudo rm -rf /usr/local/go
+        print_warning "Forcing Go update..."
     else
         print_warning "Go already installed at /usr/local/go. Skipping installation..."
-        print_status "Use --force to reinstall it"
+        print_status "Use --force to update it"
         goto_path_setup=true
     fi
 fi
@@ -187,31 +184,29 @@ fi
 if [ "${goto_path_setup:-false}" = true ]; then
     print_status "Skipping Go installation (using existing)"
 else
-    # Download Go with error checking
-    if ! wget -q "$GO_URL" -O "/tmp/go.tar.gz"; then
-        print_error "Failed to download Go"
+    print_status "Cloning update-golang script..."
+    rm -rf /tmp/update-golang
+    if ! git clone https://github.com/udhos/update-golang /tmp/update-golang; then
+        print_error "Failed to clone update-golang"
         exit 1
     fi
 
-    # Verify the download (basic size check)
-    if [ ! -s "/tmp/go.tar.gz" ]; then
-        print_error "Downloaded Go archive is empty or corrupted"
-        exit 1
+    print_status "Running update-golang..."
+    if ! (cd /tmp/update-golang && sudo ./update-golang.sh); then
+         print_error "update-golang failed"
+         rm -rf /tmp/update-golang
+         exit 1
     fi
-
-    # Extract Go
-    if ! sudo tar -C /usr/local -xzf /tmp/go.tar.gz; then
-        print_error "Failed to extract Go"
-        exit 1
-    fi
+    
+    rm -rf /tmp/update-golang
 
     # Verify Go installation
-    if ! /usr/local/go/bin/go version >/dev/null 2>&1; then
+    if ! /usr/local/go/bin/go version; then
         print_error "Go installation verification failed"
         exit 1
     fi
 
-    print_success "Go ${GO_VERSION} installed successfully"
+    print_success "Go installed successfully"
 fi
 
 print_status "🛣️ Adding Go to PATH..."
