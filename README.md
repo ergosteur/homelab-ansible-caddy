@@ -47,24 +47,89 @@ Edit your Ansible inventory at:
 ansible/inventory/hosts.yml
 ```
 
-Example:
+### Global Variables
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `caddy_admin_email` | Email used for Let's Encrypt/ACME registration. | `caddy_admin@1qaz.ca` |
+| `cloudflare_api_token` | **Required.** Token for DNS challenges (Cloudflare plugin). | `None` |
+| `caddy_admin_off` | If `true`, disables the admin API (`admin off`). | `false` |
+
+### Site Configuration (`caddy_sites`)
+
+Define your sites in the `caddy_sites` list variable. Each item is a dictionary supporting the following keys:
+
+#### Basic Proxying
+| Key | Type | Description |
+| :--- | :--- | :--- |
+| `domain` | String/List | **Required.** One or more domains for this site block (e.g., `example.com` or `["example.com", "www.example.com"]`). |
+| `upstream` | String | Target backend address (e.g., `10.0.0.5:8080` or `https://10.0.0.5`). |
+| `upstream_sni` | String | (Optional) Custom SNI (`tls_server_name`) to send when proxying to HTTPS upstreams. Defaults to the site's `domain`. |
+| `skip_upstream_cert_verify` | Boolean | If `true`, adds `tls_insecure_skip_verify` to the proxy transport. |
+
+#### TLS & Network
+| Key | Type | Description |
+| :--- | :--- | :--- |
+| `tls_internal` | Boolean | If `true`, uses Caddy's internal CA instead of Let's Encrypt (good for `.local` domains). |
+| `cache_static` | Boolean | Enables the `cache` directive (requires cache-handler plugin). |
+| `cache_ttl` | String | TTL for the cache (e.g., `1h`, `5m`). Defaults to `5m`. |
+
+#### Routing & Responses
+| Key | Type | Description |
+| :--- | :--- | :--- |
+| `serve_static` | Boolean | If `true`, serves static files instead of proxying. |
+| `root_path` | String | Web root for static files. Defaults to `/var/www/html`. |
+| `redirect` | Dict | Perform a redirect. keys: `target` (url), `code` (default `permanent`). |
+| `default_response` | String | Fixed text response if no other rules match. |
+| `default_status` | Integer | Status code for `default_response`. Defaults to `200`. |
+
+#### Advanced Routing
+| Key | Type | Description |
+| :--- | :--- | :--- |
+| `subdomain_upstreams` | List | List of subdomains to proxy separately. Keys: `subdomain`, `upstream`. |
+| `upstreams` | List | Path-based routing rules. Keys: `path`, `target`. |
+
+### Example Inventory
 
 ```yaml
 all:
   vars:
     ansible_user: ubuntu
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-    ansible_ssh_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/id_ed25519' }}"
   children:
     proxy_group1:
       vars:
         caddy_admin_email: "ergosteur@example.com"
         cloudflare_api_token: "cf_token_for_group1"
         caddy_sites:
+          # Standard Reverse Proxy
           - domain: "blog.example.com"
             upstream: "blog-backend.homelab.arpa:8080"
             cache_static: true
             cache_ttl: "1h"
+
+          # HTTPS Proxy with specific SNI and insecure skip
+          - domain: "secure.example.com"
+            upstream: "https://10.2.2.60"
+            upstream_sni: "internal-app.local" 
+            skip_upstream_cert_verify: true
+
+          # Path-based routing
+          - domain: "api.example.com"
+            upstreams:
+              - path: "/v1/*"
+                target: "10.0.0.10:8000"
+              - path: "/v2/*"
+                target: "10.0.0.11:9000"
+            default_response: "API Root"
+
+          # Wildcard Subdomain Routing
+          - domain: "*.apps.example.com"
+            subdomain_upstreams:
+              - subdomain: "grafana"
+                upstream: "10.0.0.50:3000"
+              - subdomain: "prometheus"
+                upstream: "10.0.0.51:9090"
       hosts:
         vps-proxy.example.com:
     proxy_group2:

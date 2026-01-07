@@ -1,9 +1,18 @@
-{% macro proxy_contents_macro(site) %}
+{% macro proxy_contents_macro(site, primary_domain, upstream_target) %}
     header_up Host {http.request.host}
-    {% if site.skip_upstream_cert_verify | default(false) %}
-        transport http {
-            tls_insecure_skip_verify
-        }
+    {% set is_https = upstream_target is defined and upstream_target.startswith('https://') %}
+    {% set sni_val = site.upstream_sni | default(primary_domain) %}
+    
+    {% if is_https or site.skip_upstream_cert_verify | default(false) %}
+    transport http {
+        {% if is_https %}
+        tls
+        tls_server_name {{ sni_val }}
+        {% endif %}
+        {% if site.skip_upstream_cert_verify | default(false) %}
+        tls_insecure_skip_verify
+        {% endif %}
+    }
     {% endif %}
 {% endmacro %}
 
@@ -23,11 +32,12 @@
 
 {% for site in caddy_sites %}
 {% set domains = site.domain if site.domain is iterable and site.domain is not string else [site.domain] %}
+{% set primary_domain = domains | first %}
 {{ domains | join(', ') }} {
 
     # Set up logging for this site
     log {
-        output file /var/log/caddy/{{ (domains | first) | replace('*', 'wildcard') }}.access.log
+        output file /var/log/caddy/{{ primary_domain | replace('*', 'wildcard') }}.access.log
         format transform "{common_log}"
     }
 
@@ -55,10 +65,10 @@
     
     # Iterate through the list of subdomains and create a reverse proxy rule for each
     {% for rule in site.subdomain_upstreams %}
-    @{{ rule.subdomain }} host {{ rule.subdomain }}.{{ (domains | first) | replace('*.', '', 1) }}
+    @{{ rule.subdomain }} host {{ rule.subdomain }}.{{ primary_domain | replace('*.', '', 1) }}
     handle @{{ rule.subdomain }} {
         reverse_proxy {{ rule.upstream }} {
-            {{ proxy_contents_macro(site) }}
+            {{ proxy_contents_macro(site, primary_domain, rule.upstream) }}
         }
     }
     {% endfor %}
@@ -72,7 +82,7 @@
     {% elif site.upstreams is defined and site.upstreams is not none %}
     {% for upstream_rule in site.upstreams %}
     reverse_proxy {{ upstream_rule.path }} {{ upstream_rule.target }} {
-        {{ proxy_contents_macro(site) }}
+        {{ proxy_contents_macro(site, primary_domain, upstream_rule.target) }}
     }
     {% endfor %}
 
@@ -87,7 +97,7 @@
     file_server
     {% elif site.upstream %}
     reverse_proxy {{ site.upstream }} {
-        {{ proxy_contents_macro(site) }}
+        {{ proxy_contents_macro(site, primary_domain, site.upstream) }}
     }
     {% else %}
     respond "Caddy is working!" 200
