@@ -7,6 +7,7 @@ This project manages the deployment of a custom Caddy reverse proxy using Ansibl
 - **Build Host:** The machine running Ansible (localhost or a dedicated controller). Compiles the Caddy binary.
 - **Target Hosts:** Servers (e.g., `caddy-rproxy1`, `caddy-rproxy2`) where Caddy is deployed.
 - **Orchestration:** Ansible Playbooks (`site.yml`) manage the state of the target hosts.
+- **Environment:** Uses a Python virtual environment (`~/ansible-venv`) for Ansible and `yq` for inventory parsing.
 
 ## Key Components
 
@@ -14,6 +15,8 @@ This project manages the deployment of a custom Caddy reverse proxy using Ansibl
 - Wraps `xcaddy` and `ansible-playbook`.
 - `make build`: Compiles `caddy` with plugins (Cloudflare DNS, RealIP, Cache, Transform Encoder).
 - `make deploy`: Runs the Ansible playbook.
+- `make ssh-bootstrap`: Helper to copy SSH keys to all hosts in the inventory using `yq`.
+- `make update`: Local installation helper to replace `/usr/bin/caddy` and restart the service.
 
 ### 2. Ansible Role (`ansible/playbooks/roles/caddy`)
 - **Templates:**
@@ -24,19 +27,22 @@ This project manages the deployment of a custom Caddy reverse proxy using Ansibl
 
 ### 3. Configuration (`ansible/inventory/hosts.yml`)
 - Defines `caddy_sites` list.
-- Supports advanced routing:
-  - Simple reverse proxy
-  - Wildcard subdomains (`subdomain_upstreams`)
-  - Path-based routing (`upstreams`)
-  - **New:** HTTPS Upstream SNI support (`upstream_sni`, `skip_upstream_cert_verify`).
+- Supports advanced routing and features:
+  - **Reverse Proxy:** Simple `upstream` or multiple path-based `upstreams`.
+  - **Wildcard Subdomains:** `subdomain_upstreams` for dynamic routing.
+  - **Redirects:** `redirect` block for domain/path redirection (301/302).
+  - **Caching:** `cache_static` and `cache_ttl` using the `cache-handler` plugin.
+  - **Static Files:** `serve_static` and `root_path` for hosting local content.
+  - **TLS Options:** `tls_internal` for local CA or Cloudflare DNS-01 (default).
+  - **HTTPS Upstreams:** `upstream_sni` and `skip_upstream_cert_verify` for secure backends.
 
-## Recent Changes (Jan 2026)
-- **HTTPS Upstream Support:** Updated `Caddyfile.j2` to automatically handle SNI when the upstream target is `https://`.
-  - Automatically sets `tls_server_name` to the site domain or `upstream_sni`.
-  - Supports `tls_insecure_skip_verify` via `skip_upstream_cert_verify` variable.
-- **Documentation:** Updated README with full configuration reference and multi-group examples.
+## Recent Changes (March 2026)
+- **Feature Consolidation:** Documented all major Caddyfile features including redirects, caching, and static file serving.
+- **HTTPS Upstream Support:** (Jan 2026) Updated `Caddyfile.j2` to automatically handle SNI when the upstream target is `https://`.
+- **Infrastructure:** Added `ssh-bootstrap` to `Makefile` to simplify initial setup of new proxy nodes.
 
 ## Developer Notes
 - **Git:** Project is version controlled. `caddy` binary is ignored.
 - **Safety:** Always verify `Caddyfile` generation with `ansible-playbook --check` or by inspecting the generated file on a test host before full rollout.
-- **Logs:** Caddy logs are stored in `/var/log/caddy/`.
+- **Plugins:** Custom binary includes `cloudflare`, `realip`, `cache-handler`, and `transform-encoder`.
+- **Logs:** Caddy logs are stored in `/var/log/caddy/` with rotation and custom formatting.
