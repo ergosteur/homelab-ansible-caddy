@@ -1,0 +1,30 @@
+- name: Verify Caddy sites
+  hosts: all
+  become: yes
+  tasks:
+    - name: Build final caddy_sites list (required for testing internal sites)
+      set_fact:
+        caddy_sites: >-
+          {{
+            (caddy_sites | default([]))
+            +
+            [
+              {
+                'domain': ansible_facts['hostname'],
+                'upstream': '',
+                'serve_static': True,
+                'root_path': '/var/www/caddy-test',
+                'tls_internal': True
+              },
+              {
+                'domain': ansible_facts['hostname'] ~ '.' ~ (ansible_facts['dns'].search[0] | default('localhost')),
+                'upstream': '',
+                'serve_static': True,
+                'root_path': '/var/www/caddy-test',
+                'tls_internal': True
+              }
+            ]
+          }}
+
+    - name: Run verification
+      include_tasks: roles/caddy/tasks/verify.yml

@@ -160,6 +160,7 @@ all:
 | `make install` | Copy binary to `/usr/bin/caddy` (no restart)                                |
 | `make update`  | Stop Caddy, replace binary, restart service                                 |
 | `make restart` | Restart Caddy service                                                       |
+| `make test`    | Run smoke tests and generate `test_report.csv`                              |
 | `make deploy`  | Build & run Ansible playbook (`LIMIT` optional)                             |
 | `make ssh-bootstrap` | Copy local SSH key to all hosts in the inventory (requires `yq`)         |
 | `make clean`   | Remove built binary                                                         |

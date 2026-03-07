@@ -19,6 +19,7 @@ This project manages the deployment of a custom Caddy reverse proxy using Ansibl
 - Wraps `xcaddy` and `ansible-playbook`.
 - `make build`: Compiles `caddy` with plugins (Cloudflare DNS, RealIP, Cache, Transform Encoder).
 - `make deploy`: Runs the Ansible playbook.
+- `make test`: Runs only the verification tasks and generates `test_report.csv`.
 - `make ssh-bootstrap`: Helper to copy SSH keys to all hosts in the inventory using `yq`.
 - `make update`: Local installation helper to replace `/usr/bin/caddy` and restart the service.
 
@@ -41,7 +42,7 @@ This project manages the deployment of a custom Caddy reverse proxy using Ansibl
   - **HTTPS Upstreams:** `upstream_sni` and `skip_upstream_cert_verify` for secure backends.
 
 ## Recent Changes (March 2026)
-- **Verification Tests:** Added `post_tasks` to `site.yml` that perform smoke tests on all `caddy_sites` to ensure they are responding (handling redirects, 200s, and even 404s).
+- **Verification Tests:** Added `post_tasks` to `site.yml` and a dedicated `test.yml` playbook. They perform smoke tests on all `caddy_sites` to ensure they are responding, and generate a `test_report.csv` file with results.
 - **Feature Consolidation:** Documented all major Caddyfile features including redirects, caching, and static file serving.
 - **HTTPS Upstream Support:** (Jan 2026) Updated `Caddyfile.j2` to automatically handle SNI when the upstream target is `https://`.
 - **Infrastructure:** Added `ssh-bootstrap` to `Makefile` to simplify initial setup of new proxy nodes.

@@ -80,6 +80,12 @@ install:
 restart:
 	sudo systemctl restart caddy
 
+## Run verification tests on the sites
+test:
+	@echo "🧪 Running verification tests..."
+	$(ANSIBLE_BIN) -i $(INVENTORY) ansible/playbooks/test.yml $(if $(LIMIT),--limit $(LIMIT))
+	@echo "📊 Report generated: test_report.csv"
+
 ## Build and deploy in one step
 deploy: build
 	@echo "🚀 Deploying to $(LIMIT) (leave LIMIT blank to deploy to all in inventory)"

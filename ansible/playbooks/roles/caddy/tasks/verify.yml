@@ -27,3 +27,17 @@
       loop: "{{ site_smoke_results.results }}"
       loop_control:
         label: "{{ (item.item.domain is string) | ternary(item.item.domain, item.item.domain | first) }}"
+
+    - name: Generate CSV report
+      delegate_to: localhost
+      run_once: yes
+      ansible.builtin.copy:
+        content: |
+          Host,Domain,Status,URL,Message
+          {% for host in ansible_play_hosts %}
+          {% for result in hostvars[host]['site_smoke_results']['results'] %}
+          {{ host }},{{ (result.item.domain is string) | ternary(result.item.domain, result.item.domain | first) }},{{ result.status | default('FAILED') }},{{ result.url | default('N/A') }},"{{ result.msg | default('') | replace('"', '""') }}"
+          {% endfor %}
+          {% endfor %}
+        dest: "{{ playbook_dir }}/../../test_report.csv"
+        mode: '0644'

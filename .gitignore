@@ -18,3 +18,4 @@ ansible/inventory/hosts.yml
 
 # Ignore build artifacts
 ansible/playbooks/roles/caddy/files/build/
+test_report.csv
