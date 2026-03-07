@@ -45,4 +45,7 @@ This project manages the deployment of a custom Caddy reverse proxy using Ansibl
 - **Git:** Project is version controlled. `caddy` binary is ignored.
 - **Safety:** Always verify `Caddyfile` generation with `ansible-playbook --check` or by inspecting the generated file on a test host before full rollout.
 - **Plugins:** Custom binary includes `cloudflare`, `realip`, `cache-handler`, and `transform-encoder`.
+- **Default Sites:** The Ansible role automatically adds two default internal sites for each host (hostname and FQDN) serving a test page at `/var/www/caddy-test`.
+- **Secrets:** Cloudflare API tokens are stored in `/etc/caddy/cloudflare.env` on target hosts.
+- **Internal TLS:** Requires `libnss3-tools` (installed by the role) for managing local trust stores if using `tls_internal`.
 - **Logs:** Caddy logs are stored in `/var/log/caddy/` with rotation and custom formatting.
