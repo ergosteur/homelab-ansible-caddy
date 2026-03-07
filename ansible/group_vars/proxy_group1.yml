@@ -1,0 +1,84 @@
+# Group: proxy_group1
+cloudflare_api_token: "3hgNkHZcT12XXuvVj4xo2BnDVT4urDEnnpF4ZJ-S"
+
+# List of sites to proxy for this group
+caddy_sites:
+  # --- Public Domains ---
+  - domain:
+      - asdfghjkl.ca
+      - www.asdfghjkl.ca
+    upstream: 10.2.2.60:80
+
+  - domain:
+      - bin.1qaz.ca
+    upstream: 10.20.28.200:3180
+
+  - domain:
+      - haext.1qaz.ca
+    upstream: 10.20.28.77:8123
+
+  - domain:
+      - 1qaz.ca
+      - www.1qaz.ca
+    upstream: https://10.2.2.60:443
+    skip_upstream_cert_verify: true
+
+  - domain:
+      - ergosteur.com
+      - www.ergosteur.com
+    upstream: 10.13.1.127
+
+  - domain:
+      - cfspeedtest.asdfghjkl.ca
+      - speedtest.asdfghjkl.ca
+    upstream: 10.20.29.207:6580
+
+  - domain:
+      - dynamic.ergosteur.com
+    upstreams:
+      - path: "/dns-query"
+        target: https://adguard.lan.1qaz.ca:443
+    default_response: "No backend configured for this path"
+    default_status: 404
+
+  - domain:
+      - audiobooks.ergosteur.com
+    upstream: 10.20.30.119:13378
+
+  - domain:
+      - ergology.1qaz.ca
+      - ergology220.1qaz.ca
+    upstream: https://are-nas.lan.1qaz.ca:443
+
+  - domain:
+      - git.ergosteur.com
+    upstream: 10.20.29.207:3000
+
+  - domain:
+      - music.asdfghjkl.ca
+      - priv-subsonic.asdfghjkl.ca
+      - pub-subsonic.asdfghjkl.ca
+      - subsonic.asdfghjkl.ca
+    upstream: 10.20.30.109:4040
+
+  - domain:
+      - music.ergosteur.com
+    upstream: 10.20.30.109:4040
+
+  - domain:
+      - piped.ergosteur.com
+      - "*.piped.ergosteur.com"
+    upstream: 10.20.29.207:8080
+
+  - domain:
+      - photos2.1qaz.ca
+    upstream: https://pvenas.lan.1qaz.ca:5443
+
+  - domain:
+      - sdpx.ergosteur.com
+    upstream: 10.20.30.107:7860
+
+  - domain:
+      - syno.ergosteur.com
+    upstream: https://10.20.28.223:5001
+    skip_upstream_cert_verify: true

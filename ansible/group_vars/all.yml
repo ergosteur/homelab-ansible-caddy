@@ -1,0 +1,8 @@
+# Global Ansible/Caddy defaults
+ansible_user: ubuntu
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+ansible_ssh_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/id_ed25519' }}"
+
+# Default Caddy settings (inherited by all groups unless overridden)
+caddy_admin_email: "ansible_deploy@1qaz.ca"
+caddy_admin_off: false
