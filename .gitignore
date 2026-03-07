@@ -8,8 +8,8 @@ __pycache__/
 .DS_Store
 
 # Ignore real group_vars (contain secrets like cloudflare_api_token)
-ansible/group_vars/*.yml
-!ansible/group_vars/sample_*.yml
+ansible/inventory/group_vars/*.yml
+!ansible/inventory/group_vars/sample_*.yml
 
 # Ignore real inventory (contain host IP addresses and hostnames)
 ansible/inventory/hosts.yml
