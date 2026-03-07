@@ -33,10 +33,17 @@
       run_once: yes
       ansible.builtin.copy:
         content: |
-          Host,Domain,Status,URL,Message
+          "Host","Domain","Upstream","Status","URL","Message"
           {% for host in ansible_play_hosts %}
           {% for result in hostvars[host]['site_smoke_results']['results'] %}
-          {{ host }},{{ (result.item.domain is string) | ternary(result.item.domain, result.item.domain | first) }},{{ result.status | default('FAILED') }},{{ result.url | default('N/A') }},"{{ result.msg | default('') | replace('"', '""') }}"
+          {% set item = result.item %}
+          {% if item.upstream is defined and item.upstream %}{% set upstream = item.upstream %}
+          {% elif item.upstreams is defined and item.upstreams %}{% set upstream = "Multiple (Paths)" %}
+          {% elif item.subdomain_upstreams is defined and item.subdomain_upstreams %}{% set upstream = "Multiple (Subdomains)" %}
+          {% elif item.serve_static | default(false) %}{% set upstream = "Static: " ~ (item.root_path | default('/var/www/html')) %}
+          {% elif item.redirect is defined and item.redirect %}{% set upstream = "Redirect: " ~ item.redirect.target %}
+          {% else %}{% set upstream = "Default/Respond" %}{% endif %}
+          "{{ host }}","{{ (item.domain is string) | ternary(item.domain, item.domain | first) }}","{{ upstream }}","{{ result.status | default('FAILED') }}","{{ result.url | default('N/A') }}","{{ result.msg | default('') | replace('"', '""') }}"
           {% endfor %}
           {% endfor %}
         dest: "{{ playbook_dir }}/../../test_report.csv"
