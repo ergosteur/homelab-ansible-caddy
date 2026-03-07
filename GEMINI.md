@@ -8,6 +8,10 @@ This project manages the deployment of a custom Caddy reverse proxy using Ansibl
 - **Target Hosts:** Servers (e.g., `caddy-rproxy1`, `caddy-rproxy2`) where Caddy is deployed.
 - **Orchestration:** Ansible Playbooks (`site.yml`) manage the state of the target hosts.
 - **Environment:** Uses a Python virtual environment (`~/ansible-venv`) for Ansible and `yq` for inventory parsing.
+- **Configuration:** 
+  - `ansible.cfg`: Centralized Ansible settings (inventory path, SSH tuning).
+  - `ansible/group_vars/`: Optimized variable storage separated by group.
+  - `ansible/inventory/`: Clean inventory files containing only host definitions.
 
 ## Key Components
 
