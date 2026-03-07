@@ -1,0 +1,29 @@
+- name: Verify proxied sites
+  block:
+    - name: "Smoke test: Check if sites are responding"
+      ansible.builtin.uri:
+        url: "http://127.0.0.1"
+        headers:
+          Host: "{{ (item.domain is string) | ternary(item.domain, item.domain | first) | replace('*.', 'test.') }}"
+        validate_certs: no
+        status_code: 
+          - 200
+          - 301
+          - 302
+          - 404 # Some sites might return 404 by design if no backend is configured for the root
+        timeout: 10
+      loop: "{{ caddy_sites }}"
+      # Skip wildcards that aren't easily testable without a specific subdomain, 
+      # or sites that are just redirects where we might expect 301/302.
+      register: site_smoke_results
+      ignore_errors: yes
+
+    - name: Display verification results
+      ansible.builtin.debug:
+        msg: >-
+          Site: {{ (item.item.domain is string) | ternary(item.item.domain, item.item.domain | first) }}
+          Status: {{ item.status | default('FAILED') }}
+          URL: {{ item.url | default('N/A') }}
+      loop: "{{ site_smoke_results.results }}"
+      loop_control:
+        label: "{{ (item.item.domain is string) | ternary(item.item.domain, item.item.domain | first) }}"

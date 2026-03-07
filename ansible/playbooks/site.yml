@@ -15,3 +15,7 @@
 
   roles:
     - caddy
+
+  post_tasks:
+    - name: Run verification tests
+      include_tasks: roles/caddy/tasks/verify.yml
