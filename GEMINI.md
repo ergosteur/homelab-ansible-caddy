@@ -6,7 +6,7 @@ This project manages the deployment of a custom Caddy reverse proxy using Ansibl
 ## Architecture
 - **Build Host:** The machine running Ansible (localhost or a dedicated controller). Compiles the Caddy binary.
 - **Target Hosts:** Servers (e.g., `caddy-rproxy1`, `caddy-rproxy2`) where Caddy is deployed.
-- **Orchestration:** Ansible Playbooks (`site.yml`) manage the state of the target hosts.
+- **Orchestration:** Ansible Playbooks (`site.yml`) manage the state of the target hosts and perform post-deployment smoke tests.
 - **Environment:** Uses a Python virtual environment (`~/ansible-venv`) for Ansible and `yq` for inventory parsing.
 - **Configuration:** 
   - `ansible.cfg`: Centralized Ansible settings (inventory path, SSH tuning).
@@ -41,6 +41,7 @@ This project manages the deployment of a custom Caddy reverse proxy using Ansibl
   - **HTTPS Upstreams:** `upstream_sni` and `skip_upstream_cert_verify` for secure backends.
 
 ## Recent Changes (March 2026)
+- **Verification Tests:** Added `post_tasks` to `site.yml` that perform smoke tests on all `caddy_sites` to ensure they are responding (handling redirects, 200s, and even 404s).
 - **Feature Consolidation:** Documented all major Caddyfile features including redirects, caching, and static file serving.
 - **HTTPS Upstream Support:** (Jan 2026) Updated `Caddyfile.j2` to automatically handle SNI when the upstream target is `https://`.
 - **Infrastructure:** Added `ssh-bootstrap` to `Makefile` to simplify initial setup of new proxy nodes.
