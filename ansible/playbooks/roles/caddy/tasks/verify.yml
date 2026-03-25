@@ -10,7 +10,10 @@
           - 200
           - 301
           - 302
+          - 400
+          - 401
           - 404 # Some sites might return 404 by design if no backend is configured for the root
+          - 418 # Accept teapot code for intentionally disabled sites
         timeout: 10
       loop: "{{ caddy_sites }}"
       # Skip wildcards that aren't easily testable without a specific subdomain, 

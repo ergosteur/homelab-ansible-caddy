@@ -81,9 +81,11 @@
     # Handle path-based upstreams (NOTE: this block will not be triggered if subdomain_upstreams is defined)
     {% elif site.upstreams is defined and site.upstreams is not none %}
     {% for upstream_rule in site.upstreams %}
+    {% if upstream_rule.target is defined and upstream_rule.target %}
     reverse_proxy {{ upstream_rule.path }} {{ upstream_rule.target }} {
         {{ proxy_contents_macro(site, primary_domain, upstream_rule.target) }}
     }
+    {% endif %}
     {% endfor %}
 
     # Handle a default response for the domain if no path matches
@@ -95,10 +97,12 @@
     {% elif site.serve_static | default(false) %}
     root * {{ site.root_path | default("/var/www/html") }}
     file_server
-    {% elif site.upstream %}
+    {% elif site.upstream is defined and site.upstream %}
     reverse_proxy {{ site.upstream }} {
         {{ proxy_contents_macro(site, primary_domain, site.upstream) }}
     }
+    {% elif site.default_response is defined and site.default_response is not none %}
+    respond "{{ site.default_response }}" {{ site.default_status | default(200) }}
     {% else %}
     respond "Caddy is working!" 200
     {% endif %}
